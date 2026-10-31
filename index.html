@@ -2,7 +2,7 @@
 <html lang="ru"><head><meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; img-src data:; font-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Перерыв: Танки v2.1</title>
+<title>Перерыв: Танки v2.1.1</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:#07090f;overflow:hidden;font-family:system-ui,Segoe UI,Roboto,sans-serif;color:#d8f3ff;touch-action:none;user-select:none}
@@ -34,7 +34,7 @@ button{margin-top:14px;font:inherit;font-weight:700;font-size:18px;padding:10px 
 <div><span class="b">HP<span id="hpbar"><span id="hp" style="display:block"></span></span></span><span class="b">Рекорд: <b id="hi">0</b></span><span class="b" id="mute">🔊</span></div></div>
 <div id="bossbar" class="hid"><span id="bnm"></span><div class="t"><div id="bhp"></div></div></div>
 <div id="fire">ОГОНЬ</div><div id="perm"></div>
-<div class="ov" id="start"><div class="card"><h1>Перерыв: <span>Танки</span> v2.1</h1>
+<div class="ov" id="start"><div class="card"><h1>Перерыв: <span>Танки</span> v2.1.1</h1>
 <p>Выживи как можно больше волн.</p>
 <p><kbd>WASD</kbd>/<kbd>стрелки</kbd> — ехать<br>Мышь — прицел, <kbd>ЛКМ</kbd>/<kbd>Пробел</kbd> — огонь<br><kbd>Esc</kbd> — пауза, <kbd>M</kbd> — звук</p>
 <p>📱 Телефон: левая половина — стик езды, правая — прицел и огонь.</p>
@@ -53,8 +53,9 @@ function snd(f,d=.08,t='square',v=.05,sl=0){if(muted)return;try{AC=AC||new(windo
 function tm(){muted=!muted;localStorage.setItem('bt_mute',muted?'1':'0');$('mute').textContent=muted?'🔇':'🔊'}
 $('mute').onclick=tm;
 const keys={},mouse={x:0,y:0,down:false};
-addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Escape')togglePause();if(e.code==='KeyM')tm();if(e.code==='Enter'&&(state==='menu'||state==='over'))begin();if(e.code==='Space')e.preventDefault()});
-addEventListener('keyup',e=>keys[e.code]=false);
+addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Escape')togglePause();if(e.code==='KeyM')tm();if(e.code==='Enter'&&(state==='menu'||state==='over'))begin();if(e.code==='Space'){e.preventDefault();if(e.repeat)return}});
+addEventListener('keyup',e=>{keys[e.code]=false});
+addEventListener('blur',()=>{for(const k of Object.keys(keys))keys[k]=false;mouse.down=false;fireBtn=false});
 cv.addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;usingMouse=true});
 cv.addEventListener('mousedown',()=>mouse.down=true);addEventListener('mouseup',()=>mouse.down=false);
 let usingMouse=false;
@@ -63,7 +64,7 @@ function tstart(e){e.preventDefault();for(const t of e.changedTouches){const s=t
 function tmove(e){e.preventDefault();for(const t of e.changedTouches)for(const k in sticks){const s=sticks[k];if(s&&s.id===t.identifier){s.x=t.clientX;s.y=t.clientY}}}
 function tend(e){for(const t of e.changedTouches)for(const k in sticks){const s=sticks[k];if(s&&s.id===t.identifier)sticks[k]=null}}
 cv.addEventListener('touchstart',tstart,{passive:false});cv.addEventListener('touchmove',tmove,{passive:false});cv.addEventListener('touchend',tend);cv.addEventListener('touchcancel',tend);
-let fireBtn=false;$('fire').addEventListener('touchstart',e=>{e.preventDefault();fireBtn=true},{passive:false});$('fire').addEventListener('touchend',()=>fireBtn=false);
+let fireBtn=false;const setFire=v=>{fireBtn=!!v};$('fire').addEventListener('pointerdown',e=>{e.preventDefault();setFire(true)});$('fire').addEventListener('pointerup',()=>setFire(false));$('fire').addEventListener('pointercancel',()=>setFire(false));$('fire').addEventListener('pointerleave',()=>setFire(false));
 
 let state='menu',ghosts=[],rings=[],arcs=[],bossQ=null,P,en,bl,pts,pu,score,wave,combo,comboT,hi=+localStorage.getItem('bt_hi')||0,shake,waveT,toSpawn,spawnT,flash;
 $('hi').textContent=hi;
@@ -76,7 +77,7 @@ function offerPerk(boxId,done){const box=$(boxId);box.textContent='';const av=PK
  for(const k of av){const b=document.createElement('button'),i=document.createElement('b');i.textContent=PK[k].ic;i.style.color=PK[k].c;b.appendChild(i);b.appendChild(document.createTextNode(PK[k].nm+' ('+perm[k]+'/'+PK[k].mx+')'));b.onclick=()=>{perm[k]++;savePerm();drawPerm();snd(880,.15,'triangle',.06,1760);box.textContent='';done(k)};box.appendChild(b)}return true}
 let camY=0,WH=0;function setWH(){WH=touch?H*1.28:H}
 const rnd=(a,b)=>a+Math.random()*(b-a),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
-function begin(){AC&&AC.resume&&AC.resume();setWH();P={x:W/2,y:WH-H*.4,a:0,ta:0,r:16,hp:maxHp(),mhp:maxHp(),cd:0,rapid:0,shield:perm.shield,spd:0,inv:0,vx:0,vy:0};ghosts=[];rings=[];arcs=[];en=[];bl=[];pts=[];pu=[];score=0;wave=0;combo=1;comboT=0;shake=0;flash=0;nextWave();state='play';$('start').classList.add('hid');$('over').classList.add('hid');$('pause').classList.add('hid')}
+function begin(){AC&&AC.resume&&AC.resume();try{document.activeElement&&document.activeElement.blur()}catch(e){}setWH();P={x:W/2,y:WH-H*.4,a:0,ta:0,r:16,hp:maxHp(),mhp:maxHp(),cd:0,rapid:0,shield:perm.shield,spd:0,inv:0,vx:0,vy:0};ghosts=[];rings=[];arcs=[];en=[];bl=[];pts=[];pu=[];score=0;wave=0;combo=1;comboT=0;shake=0;flash=0;nextWave();state='play';$('start').classList.add('hid');$('over').classList.add('hid');$('pause').classList.add('hid')}
 function nextWave(){wave++;bossQ=wave%10===0?'boss':wave%5===0?'mini':null;toSpawn=bossQ?2+wave:4+wave*2;spawnT=0;waveT=2;snd(440,.15,'triangle',.06,880)}
 function togglePause(){if(state==='play'){state='pause';$('pause').classList.remove('hid')}else if(state==='pause'){state='play';$('pause').classList.add('hid');last=performance.now()}}
 $('go').onclick=begin;$('re').onclick=begin;
@@ -98,8 +99,8 @@ function upd(dt){
  if(ml>.1)P.a=Math.atan2(my,mx);
  let firing=keys.Space||mouse.down||fireBtn;const as=sticks.aim;
  if(as){const dx=as.x-as.ox,dy=as.y-as.oy;if(Math.hypot(dx,dy)>10){P.ta=Math.atan2(dy,dx);firing=true}}
- else if(usingMouse&&!touch)P.ta=Math.atan2(mouse.y+camY-P.y,mouse.x-P.x);
- else if(touch&&en.length&&!as){let b=null,bd=1e9;for(const e of en){const d=dist(e,P);if(d<bd){bd=d;b=e}}if(b)P.ta=Math.atan2(b.y-P.y,b.x-P.x)}
+ else if(usingMouse&&!touch&&!keys.Space)P.ta=Math.atan2(mouse.y+camY-P.y,mouse.x-P.x);
+ else if((touch||keys.Space)&&en.length&&!as){let b=null,bd=1e9;for(const e of en){const d=dist(e,P);if(d<bd){bd=d;b=e}}if(b)P.ta=Math.atan2(b.y-P.y,b.x-P.x)}
  else if(!usingMouse)P.ta=P.a;
  P.cd-=dt;P.rapid-=dt;P.shield-=dt;P.spd-=dt;P.inv-=dt;for(const q of ghosts)q.l-=dt;ghosts=ghosts.filter(q=>q.l>0);for(const q of rings)q.l-=dt;rings=rings.filter(q=>q.l>0);for(const q of arcs)q.l-=dt;arcs=arcs.filter(q=>q.l>0);
  if(firing&&P.cd<=0){shoot(P,P.ta,true);P.cd=P.rapid>0?.09:.24;snd(220,.06,'square',.03,110)}
